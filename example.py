@@ -15,7 +15,7 @@ dssSolution = dssCircuit.Solution
 
 # 載入一個簡單的測試案例
 dssText.Command = "Clear"
-dssText.Command = "Redirect Example.dss"  # 這裡換成你實際的檔案路徑
+dssText.Command = "Redirect D:\GitHub\OpenDSS-Learning\Example.dss"  # 這裡換成你實際的檔案路徑
 
 # 執行潮流
 dssSolution.Solve()
