@@ -1,0 +1,41 @@
+Clear
+New Circuit.Case2 
+~ basekv=11.4 pu=1.000 phases=3 bus1=SourceBus 
+~ Angle=0 BaseFreq=60
+~ MVAsc3=250 MVASC1=250
+
+! LineCodes
+redirect TP_LineCodes.dss
+
+! LineDefinitions
+New Line.01 Phases=3 Bus1=SourceBus.1.2.3 Bus2=2.1.2.3 LineCode=500MCM Length=2.1 Units=km
+New Line.02 Phases=3 Bus1=2.1.2.3 Bus2=3.1.2.3 LineCode=477MCM Length=0.6 Units=km
+New Line.03 Phases=3 Bus1=3.1.2.3 Bus2=4.1.2.3 LineCode=477MCM Length=0.6 Units=km
+New Line.04 Phases=3 Bus1=4.1.2.3 Bus2=5.1.2.3 LineCode=500MCM Length=0.9 Units=km
+New Line.05 Phases=3 Bus1=5.1.2.3 Bus2=6.1.2.3 LineCode=477MCM Length=3.9 Units=km
+New Line.06 Phases=3 Bus1=6.1.2.3 Bus2=7.1.2.3 LineCode=477MCM Length=2.2 Units=km
+New Line.07 Phases=3 Bus1=7.1.2.3 Bus2=8.1.2.3 LineCode=477MCM Length=1.0 Units=km
+New Line.08 Phases=3 Bus1=8.1.2.3 Bus2=9.1.2.3 LineCode=477MCM Length=0.8 Units=km
+
+! LoadDefinitions
+New Load.1 Bus1=3.1.2.3 Phases=3 Conn=Delta Model=1 kV=11.4 kW=1550 kvar=700 Vmaxpu=1.5 Vminpu=0.7
+New Load.2 Bus1=4.1.2.3 Phases=3 Conn=Delta Model=1 kV=11.4 kW=1550 kvar=700 Vmaxpu=1.5 Vminpu=0.7
+New Load.3 Bus1=6.1.2.3 Phases=3 Conn=Delta Model=1 kV=11.4 kW=1400 kvar=459.24 Vmaxpu=1.5 Vminpu=0.7
+New Load.4 Bus1=8.1.2.3 Phases=3 Conn=Delta Model=1 kV=11.4 kW=673 kvar=220.76 Vmaxpu=1.5 Vminpu=0.7
+
+! ESS
+New Storage.15 Bus1=5.1.2.3 kV=11.4 kWRated=5000 kWhStored=5000 
+Storage.15.state=DISCHARGING %discharge=100
+Storage.15.state=charging kwhstored=100 %charge=100
+
+! ESS
+Set VoltageBases=[11.4]
+calcv
+Solve
+
+! Show Result
+Show Voltages LN Nodes
+Show Powers kVA Elem
+Export Voltages
+
+
