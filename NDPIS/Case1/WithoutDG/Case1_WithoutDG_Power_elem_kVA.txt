@@ -1,0 +1,98 @@
+
+CIRCUIT ELEMENT POWER FLOW
+
+(Power Flow into element from indicated Bus)
+
+Power Delivery Elements
+
+  Bus     Phase     kW     +j   kvar         kVA         PF
+
+ELEMENT = "Vsource.SOURCE"
+SOURCEBUS     1      -952.2 +j   -373.5     1022.8       0.9310
+SOURCEBUS     2      -952.2 +j   -373.5     1022.8       0.9310
+SOURCEBUS     3      -952.2 +j   -373.5     1022.8       0.9310
+   TERMINAL TOTAL . -2856.7 +j  -1120.4     3068.5       0.9310
+SOURCEBUS     0         0.0 +j      0.0        0.0       1.0000
+SOURCEBUS     0         0.0 +j      0.0        0.0       1.0000
+SOURCEBUS     0         0.0 +j      0.0        0.0       1.0000
+   TERMINAL TOTAL .     0.0 +j      0.0        0.0       1.0000
+
+ELEMENT = "Line.01"
+SOURCEBUS     1       952.2 +j    373.5     1022.8       0.9310
+SOURCEBUS     2       952.2 +j    373.5     1022.8       0.9310
+SOURCEBUS     3       952.2 +j    373.5     1022.8       0.9310
+   TERMINAL TOTAL .  2856.7 +j   1120.4     3068.5       0.9310
+2             1      -948.2 +j   -368.0     1017.1       0.9322
+2             2      -948.2 +j   -368.0     1017.1       0.9322
+2             3      -948.2 +j   -368.0     1017.1       0.9322
+   TERMINAL TOTAL . -2844.5 +j  -1104.0     3051.2       0.9322
+
+ELEMENT = "Line.02"
+2             1       548.2 +j    201.3      584.0       0.9387
+2             2       548.2 +j    201.3      584.0       0.9387
+2             3       548.2 +j    201.3      584.0       0.9387
+   TERMINAL TOTAL .  1644.5 +j    604.0     1751.9       0.9387
+3             1      -546.6 +j   -197.3      581.2       0.9406
+3             2      -546.6 +j   -197.3      581.2       0.9406
+3             3      -546.6 +j   -197.3      581.2       0.9406
+   TERMINAL TOTAL . -1639.9 +j   -592.0     1743.5       0.9406
+
+ELEMENT = "Transformer.XFM1"
+3             1        -0.0 +j      0.0        0.0      -0.0000
+3             0         0.0 +j      0.0        0.0       1.0000
+   TERMINAL TOTAL .    -0.0 +j      0.0        0.0      -0.0000
+4             1         0.0 +j     -0.0        0.0      -0.9998
+4             0         0.0 +j      0.0        0.0       1.0000
+   TERMINAL TOTAL .     0.0 +j     -0.0        0.0      -0.9998
+
+ELEMENT = "Transformer.XFM2"
+3             2        -0.0 +j      0.0        0.0      -0.0000
+3             0         0.0 +j      0.0        0.0       1.0000
+   TERMINAL TOTAL .    -0.0 +j      0.0        0.0      -0.0000
+4             2         0.0 +j     -0.0        0.0      -0.8563
+4             0         0.0 +j      0.0        0.0       1.0000
+   TERMINAL TOTAL .     0.0 +j     -0.0        0.0      -0.8563
+
+ELEMENT = "Transformer.XFM3"
+3             3        -0.0 +j      0.0        0.0      -0.0000
+3             0         0.0 +j      0.0        0.0       1.0000
+   TERMINAL TOTAL .    -0.0 +j      0.0        0.0      -0.0000
+4             3         0.0 +j     -0.0        0.0      -0.8238
+4             0         0.0 +j      0.0        0.0       1.0000
+   TERMINAL TOTAL .     0.0 +j     -0.0        0.0      -0.8238
+
+= = = = = = = = = = = = = = = = = = =  = = = = = = = = = = =  = =
+
+Power Conversion Elements
+
+  Bus     Phase     kW   +j  kvar         kVA         PF
+
+ELEMENT = "Load.01"
+2             1     400.0 +j  166.7      433.3       0.9231
+2             2     400.0 +j  166.7      433.3       0.9231
+2             3     400.0 +j  166.7      433.3       0.9231
+  TERMINAL TOTAL  .  1200.0 +j    500.0     1300.0       0.9231
+
+ELEMENT = "Load.02"
+3             1     546.7 +j  197.3      581.2       0.9406
+3             2     546.7 +j  197.3      581.2       0.9406
+3             3     546.7 +j  197.3      581.2       0.9406
+  TERMINAL TOTAL  .  1640.0 +j    592.0     1743.5       0.9406
+
+ELEMENT = "Load.03"
+4             1       0.0 +j    0.0        0.0       1.0000
+4             0       0.0 +j    0.0        0.0       1.0000
+  TERMINAL TOTAL  .     0.0 +j      0.0        0.0       1.0000
+
+ELEMENT = "Load.04"
+4             2       0.0 +j    0.0        0.0       1.0000
+4             0       0.0 +j    0.0        0.0       1.0000
+  TERMINAL TOTAL  .     0.0 +j      0.0        0.0       1.0000
+
+ELEMENT = "Load.05"
+4             3       0.0 +j    0.0        0.0       1.0000
+4             0       0.0 +j    0.0        0.0       1.0000
+  TERMINAL TOTAL  .     0.0 +j      0.0        0.0       1.0000
+
+
+Total Circuit Losses =   16.8 +j   28.4

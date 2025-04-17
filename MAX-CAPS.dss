@@ -1,0 +1,40 @@
+Clear 
+
+new circuit.MAX-CAPS
+~ basekv=11.4 pu=1.000 phases=3 bus1=SourceBus.1.2.3
+~ Angle=0 BaseFreq=60 
+~ MVAsc3=250 MVASC1=250  
+
+redirect TP_LineCodes.dss 
+
+! keep everything above unchanged
+
+New Line.1 Phases=3 Bus1=SourceBus.1.2.3 Bus2=2.1.2.3 LineCode=500MCM Length=2390.0 units=m
+New Line.3 Phases=3 Bus1=2.1.2.3 Bus2=3.1.2.3 LineCode=500MCM Length=1354.0 units=m
+New Line.5 Phases=3 Bus1=3.1.2.3 Bus2=4.1.2.3 LineCode=477MCM Length=481.0 units=m
+New Line.6 Phases=3 Bus1=4.1.2.3 Bus2=5.1.2.3 LineCode=477MCM Length=297.0 units=m
+
+New Transformer.1_1  
+~ Phases=1
+~ Windings=2
+~ XHL=2.02
+~ wdg=1 bus=5.1 Conn=delta kV=6.5818 kVA=167 %r=0.3065  
+~ wdg=2 bus=6.1 Conn=delta kV=0.1270 kVA=167 %r=0.3065 
+
+
+New Load.L1 Bus1=2.1.2.3 Phases=3 Conn=Delta Model=1 kV=11.4 kW=93.8 pf=0.95 vmaxpu=1.05 vminpu=0.7
+New Load.L2 Bus1=3.1.2.3 Phases=3 Conn=Delta Model=1 kV=11.4 kW=93.8 pf=0.95 vmaxpu=1.05 vminpu=0
+New Load.L3 Bus1=4.1.2.3 Phases=3 Conn=Delta Model=1 kV=11.4 kW=93.8 pf=0.95 vmaxpu=1.05 vminpu=0
+New Load.L4 Bus1=5.1.2.3 Phases=3 Conn=Delta Model=1 kV=11.4 kW=93.8 pf=0.95 vmaxpu=1.05 vminpu=0
+
+
+New Load.D18 Bus1=6.1 Phases=1 Conn=Delta Model=1 kV=0.22 kW=-167 pf=1.0 vmaxpu=1.05 vminpu=0.7
+
+Set Voltagebases=[11.4,0.22]
+
+! keep everything below unchanged
+calcv
+Solve
+
+Show Voltages LN Nodes
+Show Powers kVA Elem

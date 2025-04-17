@@ -1,0 +1,26 @@
+Clear 
+new circuit.case0_WithDG 
+~ basekv=11.4 pu=1.000 phases=3 bus1=SourceBus.1.2.3
+~ Angle=0      BaseFreq=60             
+~ MVAsc3=250 MVASC1=250   
+
+!LINECODES
+redirect TP_LineCodes.dss
+
+
+!LINE DEFINITIONS 
+New Line.01  Phases=3  Bus1=SourceBus  Bus2=2.1.2.3  LineCode=477MCM Length=2.0 units=km  
+New Line.02  Phases=3  Bus1=2.1.2.3          Bus2=3.1.2.3  LineCode=477MCM Length=3.0 units=km
+
+!LOAD DEFINITIONS 
+New Load.1  Bus1=2.1.2.3  Phases=3  Conn=Delta  Model=1  kV=11.4  kW=1500 kvar=60 
+New Load.2  Bus1=3.1.2.3  Phases=3  Conn=Delta  Model=1  kV=11.4  kW=-1000 kvar=0 
+
+Set Voltagebases=[11.4]
+
+calcv
+Solve
+!----------------Show some Results----------------
+Show Voltages LN Nodes
+Show Powers kVA Elem
+Export Voltages

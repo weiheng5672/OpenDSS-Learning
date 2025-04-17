@@ -1,0 +1,8 @@
+
+SYMMETRICAL COMPONENT VOLTAGES BY BUS (for 3-phase buses)
+
+Bus        Mag:   V1 (kV)    p.u.     V2 (kV)   %V2/V1    V0 (kV)    %V0/V1
+
+sourcebus     6.577     0.9992  3.215E-009  4.888E-008 4.282E-010 6.51E-009
+2             6.567     0.9978  3.211E-009  4.89E-008 4.282E-010 6.519E-009
+3             6.588      1.001  3.218E-009  4.885E-008 4.282E-010 6.499E-009
