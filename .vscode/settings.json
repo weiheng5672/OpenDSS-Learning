@@ -1,0 +1,15 @@
+{
+    "code-runner.executorMap": {
+      "dss": "python run_dss.py"
+    },
+
+    "code-runner.fileExtensionMap": {
+      "dss": "dss"
+    },
+    "code-runner.executorMapByFileExtension": {
+      ".dss": "python run_dss.py"
+    },
+    "code-runner.runInTerminal": true,
+    "code-runner.saveFileBeforeRun": true
+}
+  
