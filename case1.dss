@@ -1,5 +1,6 @@
 Clear 
-new circuit.Case1 
+
+new circuit.case1 
 ~ basekv=11.4 pu=1.000 phases=3 bus1=SourceBus 
 ~ Angle=0  BaseFreq=60
 ~ MVAsc3=250 MVASC1=250
