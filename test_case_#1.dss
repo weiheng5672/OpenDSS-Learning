@@ -1,0 +1,27 @@
+Clear 
+new circuit.case1_#1
+~ basekv=11.4 pu=1.000 phases=3 bus1=1 
+~ Angle=0  BaseFreq=60
+~ MVAsc3=250 MVASC1=250
+
+!LINECODES
+redirect TP_LineCodes.dss
+
+!LINE DEFINITIONS 
+New Line.01    Phases=3 Bus1=1.1.2.3  Bus2=2.1.2.3 LineCode=#1 Length=2.083 units=km 
+New Line.02    Phases=3 Bus1=2.1.2.3  Bus2=3.1.2.3 LineCode=#1 Length=1.262 units=km 
+New Line.03    Phases=3 Bus1=3.1.2.3  Bus2=4.1.2.3 LineCode=#1 Length=0.036 units=km 
+New Line.04    Phases=3 Bus1=4.1.2.3  Bus2=5.1.2.3 LineCode=#1 Length=0.233 units=km
+
+! LOAD DEFINITIONS 
+New Load.1   Bus1=1.1.2.3   Phases=3 Conn=Delta Model=1 kV=11.4   kW=500     pf=0.98   vmaxpu=1.5 vminpu=0.7
+New Load.2   Bus1=2.1.2.3   Phases=3 Conn=Delta Model=1 kV=11.4   kW=500     pf=0.98   vmaxpu=1.5 vminpu=0.7
+New Load.3   Bus1=3.1.2.3   Phases=3 Conn=Delta Model=1 kV=11.4   kW=500     pf=0.98   vmaxpu=1.5 vminpu=0.7
+New Load.4   Bus1=4.1.2.3   Phases=3 Conn=Delta Model=1 kV=11.4   kW=500     pf=0.98   vmaxpu=1.5 vminpu=0.7
+New Load.5   Bus1=5.1.2.3   Phases=3 Conn=Delta Model=1 kV=11.4   kW=500     pf=0.98   vmaxpu=1.5 vminpu=0.7
+
+Set Voltagebases=[11.4,0.38]
+calcv
+Solve
+
+Show Voltages LN Nodes
