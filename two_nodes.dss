@@ -1,0 +1,16 @@
+clear 
+
+new circuit.two_nodes
+~ basekv=2 pu=1.000 phases=1 bus1=SourceBus
+
+new linecode.myline nphases=1 basefreq=60 rmatrix=(0.01) xmatrix=(0) units=m
+
+New Line.line_1   Phases=1   Bus1=SourceBus  Bus2=mybus1 linecode=myline
+
+New Load.load_1   Bus1=mybus1   Phases=1  kV=2   kW=1000  kvar=500
+
+set mode=daily number=1 stepsize=3600 hour=0 sec=0
+
+set controlmode=off
+
+solve
