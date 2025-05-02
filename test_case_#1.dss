@@ -1,8 +1,8 @@
 Clear 
 new circuit.case1_#1
-~ basekv=11.4 pu=1.000 phases=3 bus1=1 
+~ basekv=11.4 pu=1.000 phases=3 bus1=1.1.2.3
 ~ Angle=0  BaseFreq=60
-~ MVAsc3=250 MVASC1=250
+~ MVAsc3=250000 MVASC1=250000
 
 !LINECODES
 redirect TP_LineCodes.dss
