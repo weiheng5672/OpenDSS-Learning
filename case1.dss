@@ -1,28 +1,31 @@
 Clear 
 
-new circuit.case1 
-~ basekv=11.4 pu=1.000 phases=3 bus1=SourceBus 
+new circuit.case1
+~ basekv=11.4 phases=3 
+
+Edit Vsource.source
+~ basekv=11.4 pu=1.000 bus1=SourceBus
 ~ Angle=0  BaseFreq=60
-~ MVAsc3=250 MVASC1=250
+~ MVAsc3=1e6 MVASC1=1e6
 
 !LINECODES
 redirect TP_LineCodes.dss
 
 !LINE DEFINITIONS 
-New Line.01    Phases=3   Bus1=SourceBus.1.2.3   Bus2=2.1.2.3   LineCode=500MCM Length=1.55 units=km  
-New Line.02    Phases=3   Bus1=2.1.2.3           Bus2=3.1.2.3   LineCode=477MCM Length=1.4  units=km
+New Line.01 Phases=3 Bus1=SourceBus.1.2.3  Bus2=2.1.2.3  LineCode=500MCM Length=1.55 units=km  
+New Line.02 Phases=3 Bus1=2.1.2.3          Bus2=3.1.2.3  LineCode=477MCM Length=1.4  units=km
 
 New Transformer.XFM1  Phases=1 Windings=2 Xhl=1.78 
-~ wdg=1 bus=3.1       conn=Delta kv=6.5818  kva=167  %r=0.55  
-~ wdg=2 bus=4.1       conn=Delta kv=0.2194  kva=167  %r=0.55
+~ wdg=1 bus=3.1  conn=Delta kv=6.5818  kva=167  %r=0.55  
+~ wdg=2 bus=4.1  conn=Delta kv=0.2194  kva=167  %r=0.55
 
 New Transformer.XFM2  Phases=1 Windings=2 Xhl=1.78 
-~ wdg=1 bus=3.2       conn=Delta kv=6.5818  kva=167  %r=0.55 
-~ wdg=2 bus=5.2       conn=Delta kv=0.2194  kva=167  %r=0.55
+~ wdg=1 bus=3.2  conn=Delta kv=6.5818  kva=167  %r=0.55 
+~ wdg=2 bus=5.2  conn=Delta kv=0.2194  kva=167  %r=0.55
 
 New Transformer.XFM3  Phases=1 Windings=2 Xhl=1.78
-~ wdg=1 bus=3.3       conn=Delta kv=6.5818  kva=167  %r=0.55  
-~ wdg=2 bus=6.3       conn=Delta kv=0.2194  kva=167  %r=0.55 
+~ wdg=1 bus=3.3  conn=Delta kv=6.5818  kva=167  %r=0.55  
+~ wdg=2 bus=6.3  conn=Delta kv=0.2194  kva=167  %r=0.55 
 
 New Load.01     Bus1=2.1    Phases=3  Conn=Delta  Model=1  kV=11.4   kW=1200.0   kvar=500
 New Load.02     Bus1=3.1    Phases=3  Conn=Delta  Model=1  kV=11.4   kW=1640     kvar=592 
@@ -31,11 +34,11 @@ New Load.03     Bus1=4.1    Phases=1  Conn=Delta  Model=1  kV=0.2194   kW=-166.6
 New Load.04     Bus1=5.2    Phases=1  Conn=Delta  Model=1  kV=0.2194   kW=-166.6  kvar=0 vmaxpu=1.5 vminpu=0.7
 New Load.05     Bus1=6.3    Phases=1  Conn=Delta  Model=1  kV=0.2194   kW=-166.6  kvar=0 vmaxpu=1.5 vminpu=0.7
 
-Set Voltagebases=[11.4, 0.38]
+Set Voltagebases=[11.4, 0.38, 0.22, 0.11]
 
 calcv
-Solve
+! Solve
 
-Show Voltages LN Nodes
-Show Powers kVA Elem
+! Show Voltages LN Nodes
+! Show Powers kVA Elem
 
