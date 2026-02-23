@@ -1,0 +1,103 @@
+// The first step is always to clear the DSS and instantiate a new circuit 
+clear 
+
+New object=circuit.ExampleCircuit 
+~ basekv=115  1.00 0.0 60.0 3 20000 21000 4.0 3.0  ! edit the voltage source
+
+// Define some load shapes for the loads and wind 
+! This is an example of defining parameters via their default order  
+!  in this case, the num of points and interval 
+New loadshape.day 8 3.0 
+~   mult=(.3 .36 .48 .62 .87 .95 .94 .60) 
+
+! This is an example of an inline calculation, see OpenDSS Manual for more info 
+New loadshape.wind 2400 {1 24 /}                ! unit must be hours  
+~   mult=(file=zavwind.csv) action=normalize    ! wind turbine characteristic 
+
+// Define a linecode for the lines - unbalanced 336 MCM ACSR connection 
+New linecode.336matrix nphases=3   ! horizontal flat construction 
+! rmatrix, xmatrix, and xmatrix are in lower triangular matrix format.   
+!   see the OpenDSS Manul for more details on how to specify matrixes. 
+! In ohms per 1000 ft  
+~   rmatrix=(0.0868455 |  0.0298305 0.0887966 | 0.0288883 0.0298305  0.0868455)  
+! In ohms per 1000 ft  
+~   xmatrix=(0.2025449 |  0.0847210 0.1961452 | 0.0719161 0.0847210  0.2025449) 
+! In nf per 1000 ft 
+~   cmatrix=(2.74 | -0.70 2.96| -0.34 -0.71 2.74) 
+~   Normamps = 400  Emergamps=600 
+
+// Define Substation transformer 
+! Note that the buses property provides an alternate way to specify the  
+!   buses beyond bus1= and bus2= 
+New transformer.subxfrm phases=3 windings=2 buses=(SourceBus subbus)  
+~   conns='delta wye' kvs=(115 12.47) kvas=(20000 20000) XHL=7 
+ 
+// Define the lines 
+New line.line1 bus1=subbus   bus2=loadbus1 linecode=336matrix length=10  
+New line.line2 bus1=loadbus1 bus2=loadbus2 linecode=336matrix length=10 
+New line.line3 bus1=loadbus2 bus2=loadbus3 linecode=336matrix length=20 
+
+// Define the loads 
+New load.load1 bus1=loadbus1 phases=3 kv=12.47 kw=1000.0 pf=0.88 model=1  
+~   class=1 duty=day 
+New load.load2 bus1=loadbus2 phases=3 kv=12.47 kw=500.0 pf=0.88 model=1  
+~   class=1 duty=day conn=delta 
+ 
+// Capacitor with control 
+New capacitor.Cap1  bus1=loadbus2  phases=3 kvar=600 kv=12.47 
+New capcontrol.Cap1Ctrl element=line.line3 terminal=1 capacitor=Cap1  
+~   type=current ctratio=1 ONsetting=60 OFFsetting=55 delay=2 
+ 
+// Regulated transformer to DG bus 
+New transformer.reg1 phases=3 windings=2  
+~   buses=(loadbus3 regbus)  
+~   conns='wye wye'  
+~   kvs=(12.47 12.47)  
+~   kvas=(8000 8000) 
+~   XHL=1              ! tiny reactance for a regulator 
+ 
+// Regulator Control definitions 
+New regcontrol.subxfrmCtrl  transformer=subxfrm  winding=2 vreg=125  
+~   band=3 ptratio=60 delay=10 
+New regcontrol.reg1Ctrl transformer=reg1 winding=2 vreg=122 band=3  
+~   ptratio=60 delay=15 
+ 
+// Define a wind generator of 8MW 
+New generator.gen1   bus1=regbus kV=12.47 kW=8000 pf=1 conn=delta  
+~   duty=wind Model=1 
+ 
+// Define some monitors so we can see what's happening 
+//  (See documentation on how the mode parameter works) 
+! Monitor the power output of the wind turbine 
+New Monitor.gen1 element=generator.gen1 terminal=1  mode=1 
+! Monitor the voltage and currents at the second load bus 
+New Monitor.loadbus2 element=load.load2 terminal=1 mode=0 
+! Monitor sequence voltages and currents magnitudes of line 3, terminal 1 
+New Monitor.line3 element=line.line3 terminal=1 mode=48 
+! You need an energy meter in order to get line distances for a profile plot 
+New Energymeter.em1 element=line.line1 
+ 
+// Define voltage bases so voltage reports come out in per unit 
+Set voltagebases=(115 12.47 .48) 
+
+// Generate the bus list and figure out the voltage bases 
+Calcvoltagebases 
+ 
+// Simulation options to make the cap and reg controllers operate in sync 
+// with the rest of the simulation 
+Set controlmode=time 
+// Simulation options to do a time based simulation for 24 hours (86400 sec) 
+//  with a time step of 1 sec starting at hour 0, second 0 
+Set mode=duty number=86400  hour=0  stepsize=1 sec=0 
+ 
+// Conduct the simulation 
+Solve 
+ 
+// Show some results 
+! Plot how the voltage at loadbus1 looked during the day 
+Plot monitor, object=loadbus2, Channels=(1,3,5) 
+! Visualize the line's flow as it appear at the last timestep 
+Visualize element=Line.line1 what=powers 
+! Show the voltage profile on the feeder as it appeared at the last timestep 
+Plot profile 
+
