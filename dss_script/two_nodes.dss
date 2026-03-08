@@ -1,16 +1,24 @@
 clear 
 
 new circuit.two_nodes
-~ basekv=2 pu=1.000 phases=1 bus1=SourceBus
+~ basekv=2 pu=1.000 phases=3 bus1=SourceBus
 
-new linecode.myline nphases=1 basefreq=60 rmatrix=(0.01) xmatrix=(0) units=m
+New Load.load_1   Bus1=mybus1   Phases=3  kV=2   kW=1000  kvar=500 conn=delta
+New linecode.mtx601 nphases=3 BaseFreq=60 
+~ rmatrix = (0.3465 | 0.1560 0.3375 | 0.1580 0.1535 0.3414 ) 
+~ xmatrix = (1.0179 | 0.5017 1.0478 | 0.4236 0.3849 1.0348 ) 
+~ units=mi 
 
-New Line.line_1   Phases=1   Bus1=SourceBus  Bus2=mybus1 linecode=myline
+New Line.line_1   Phases=3   Bus1=mybus1  Bus2=SourceBus linecode=mtx601   Length=0.000001  Units=km
 
-New Load.load_1   Bus1=mybus1   Phases=1  kV=2   kW=1000  kvar=500
+New Energymeter.meter1 element=Line.line_1 terminal=1
+New monitor.monitor1 element=Line.line_1 terminal=2 mode=1
 
 set mode=daily number=1 stepsize=3600 hour=0 sec=0
 
 set controlmode=off
 
+Set Voltagebases=[2]
+
+calcv
 solve
