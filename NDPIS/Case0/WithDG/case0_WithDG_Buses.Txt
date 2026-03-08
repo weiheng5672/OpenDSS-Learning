@@ -1,9 +1,0 @@
-
-BUSES AND NODES IN ACTIVE CIRCUIT: case0_withdg
-
-                                    Coord                                 Number of     Nodes
-  Bus          Base kV             (x, y)                      Keep?       Nodes        connected ...
-
-"sourcebus"  11.400          (           NA,            NA )     No           3          1    2    3 
-"2"          11.400          (           NA,            NA )     No           3          1    2    3 
-"3"          11.400          (           NA,            NA )     No           3          1    2    3 
