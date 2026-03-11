@@ -24,7 +24,7 @@ P_2 = 256.6 # MW
 Q_2 = 110.2 # Mvar
 
 P_3 = 138.6 # MW
-Q_3 = 45.5 # Mvar
+Q_3 = 45.2 # Mvar
 
 # 初始化 OpenDSS
 dss_engine = dss.DSS
@@ -74,3 +74,22 @@ for name in dss_circuit.AllBusNames:
     print(f"{name:<10} | {pu_v:.6f} pu")
 
 print("="*30)
+
+test = dss_circuit.AllElementNames
+print(test)
+
+test = dss_circuit.AllElementLosses
+print(test)
+print(f"搖擺匯流排注入P:{-test[0]/1000:<5.2f}kW,Q:{-test[1]/1000:<5.2f}kvar")
+print(f"線路1-2損耗   P:{test[2]/1000:<5.2f}kW,Q:{test[3]/1000:<5.2f}kvar")
+print(f"線路2-3損耗   P:{test[4]/1000:<5.2f}kW,Q:{test[5]/1000:<5.2f}kvar")
+print(f"線路1-3損耗   P:{test[6]/1000:<5.2f}kW,Q:{test[7]/1000:<5.2f}kvar")
+print(f"負載2損耗     P:{test[8]/1000:<5.2f}kW,Q:{test[9]/1000:<5.2f}kvar")
+print(f"負載3損耗     P:{test[10]/1000:<5.2f}kW,Q:{test[11]/1000:<5.2f}kvar")
+
+
+
+dss_circuit.SetActiveElement("Line.L13")
+powers = dss_circuit.ActiveCktElement.Powers
+print(powers)
+print(powers[0]+powers[2]+powers[4])
