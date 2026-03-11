@@ -52,7 +52,9 @@ dss_text.Command = f"New Line.L13 Bus1=SwingBus Bus2=Bus3 Phases=3 r1={r13} x1={
 # 3. 定義負荷 (Load)
 # OpenDSS 預設是平衡三相，kV 設定為線電壓
 dss_text.Command = f"New Load.Load2 Bus1=Bus2 Phases=3 kV={V_base} kW={P_Load*1000} kvar={Q_Load*1000} model=1"
-dss_text.Command = f"New Generator.Generator Bus1=Bus3 Phases=3 kV={V_base} kW={P_G*1000} Vpu={V_pu_G} model=1"
+
+# 發電機指定P和V的大小是 model=3
+dss_text.Command = f"New Generator.Generator Bus1=Bus3 Phases=3 kV={V_base} kW={P_G*1000} Vpu={V_pu_G} model=3"
 
 # 4. 執行潮流計算
 dss_text.Command = f"Set VoltageBases = [{V_base}]"
@@ -75,3 +77,28 @@ for name in dss_circuit.AllBusNames:
     print(f"{name:<10} | {pu_v:.6f} pu")
 
 print("="*30)
+
+test = dss_circuit.AllElementNames
+print(test)
+
+test = dss_circuit.AllElementLosses
+print(test)
+print(f"搖擺匯流排注入P:{-test[0]/1000:<5.2f}kW,Q:{-test[1]/1000:<5.2f}kvar")
+print(f"線路1-2損耗  P:{test[2]/1000:<5.2f}kW,Q:{test[3]/1000:<5.2f}kvar")
+print(f"線路2-3損耗  P:{test[4]/1000:<5.2f}kW,Q:{test[5]/1000:<5.2f}kvar")
+print(f"線路1-3損耗  P:{test[6]/1000:<5.2f}kW,Q:{test[7]/1000:<5.2f}kvar")
+print(f"負載損耗     P:{test[8]/1000:<5.2f}kW,Q:{test[9]/1000:<5.2f}kvar")
+print(f"發電機注入   P:{-test[10]/1000:<5.2f}kW,Q:{-test[11]/1000:<5.2f}kvar")
+
+test = dss_circuit.AllBusNames
+print(test)
+
+test = dss_circuit.AllBusVmagPu
+print(test)
+print(f"搖擺匯流排電壓:{test[0]:.5f} pu")
+print(f"2號匯流排電壓: {test[3]:.5f} pu")
+print(f"3號匯流排電壓: {test[6]:.5f} pu")
+
+
+test = dss_circuit.Generators.RegisterValues
+print(test)
