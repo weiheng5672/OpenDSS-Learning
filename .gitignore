@@ -1,0 +1,19 @@
+# 忽略 Python 環境資料夾
+venv/
+.venv/
+env/
+
+# 忽略輸出結果與快取
+outputs/
+
+# 忽略日誌檔案與資料夾 (程式執行會自動重建)
+logs/
+*.log
+
+# 忽略 Python 自動產生的快取
+__pycache__/
+*.py[cod]
+
+# 忽略登入資訊
+config.py
+
