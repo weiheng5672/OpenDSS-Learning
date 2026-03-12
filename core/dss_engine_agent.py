@@ -54,6 +54,7 @@ class EngineAgent:
         # 執行初始化編譯 (封裝路徑切換邏輯)
         self._compile_dss()
 
+
     def _compile_dss(self):
         """
         私有方法：處理路徑敏感的編譯流程。
@@ -149,6 +150,7 @@ class EngineAgent:
         """
         return self.circuit.AllBusVmagPu
 
+
     def has_pv_system(self):
         """
         檢查系統中是否存在 PV 系統。
@@ -169,6 +171,7 @@ class EngineAgent:
         self.text.Command = f"New LoadShape.CommonLoad npts={npts} interval=1 mult=({','.join(map(str, load_mults))})"
         # 定義太陽能曲線
         self.text.Command = f"New LoadShape.CommonPV npts={npts} interval=1 mult=({','.join(map(str, pv_mults))})"
+
 
     def run_timeseries_impact_clean(self, load_profile, pv_profile):
         npts = len(load_profile)
@@ -221,8 +224,6 @@ class EngineAgent:
 
         status_sequence = ["合格" if dv <= 3.0 else "不合格" for dv in max_dv_sequence]
         return max_dv_sequence, status_sequence
-
-
 
 
 
@@ -287,83 +288,3 @@ class EngineAgentForCOM:
         if self.status == "Error": return False
         return self.circuit.PVSystems.Count > 0
 
-    def _distribute_load(self, feederload_kw):
-        """私有方法：執行 COM 環境下的負載分配邏輯"""
-        # 1. 取得變壓器二次側 Bus (115_ 系列)
-        tr_buses = [bus for bus in self.circuit.AllBusNames if "115_" in bus]
-        
-        # 2. 統計變壓器總容量 (kVA)
-        total_tr_kva = 0
-        tr_exists = self.circuit.Transformers.First
-        while tr_exists:
-            total_tr_kva += self.circuit.Transformers.kva
-            tr_exists = self.circuit.Transformers.Next
-
-        # 3. 計算分配權重 (1% 規則)
-        tr_target_kw = total_tr_kva * 0.01
-        if feederload_kw <= tr_target_kw:
-            tr_final_kw, sw_final_kw = feederload_kw, 0
-        else:
-            tr_final_kw, sw_final_kw = tr_target_kw, feederload_kw - tr_target_kw
-
-        # 4. 取得 Switch Bus
-        switch_buses = []
-        for l_name in self.circuit.Lines.AllNames:
-            if "switch_" in l_name.lower():
-                self.circuit.Lines.Name = l_name
-                switch_buses.append(self.circuit.Lines.Bus1.split('.')[0])
-        switch_buses = list(set(switch_buses))
-
-        # 5. 生成 DSS 指令掛載負載
-        if tr_buses and tr_final_kw > 0:
-            avg_tr = tr_final_kw / len(tr_buses)
-            for bus in tr_buses:
-                self.text.Command = f"New Load.TR_{bus} Bus1={bus} Phases=1 kV=0.11 kW={avg_tr} pf=0.95"
-
-        if switch_buses and sw_final_kw > 0:
-            avg_sw = sw_final_kw / len(switch_buses)
-            for bus in switch_buses:
-                self.text.Command = f"New Load.SW_{bus} Bus1={bus} Phases=3 kV=11.4 kW={avg_sw} pf=0.95"
-
-    def run_voltage_impact(self, feederload_kw):
-        """執行電壓變動率分析"""
-        if self.status == "Error":
-            return None, self.error_msg
-
-        try:
-            # A. 負載分配
-            self._distribute_load(feederload_kw)
-
-            # B. 基準計算 (無 PV)
-            pv_names = self.circuit.PVSystems.AllNames
-            for pv in pv_names: 
-                self.text.Command = f"PVSystem.{pv}.Irradiance=0"
-            
-            self.text.Command = "Solve"
-            if self.dss_error.Number != 0:
-                return None, f"基準解算失敗: {self.dss_error.Description}"
-            v_no_pv = np.array(self.circuit.AllBusVmagPu)
-
-            # C. 併網計算 (有 PV)
-            for pv in pv_names: 
-                self.text.Command = f"PVSystem.{pv}.Irradiance=1"
-            
-            self.text.Command = "Solve"
-            if self.dss_error.Number != 0:
-                return None, f"併網解算失敗: {self.dss_error.Description}"
-            v_with_pv = np.array(self.circuit.AllBusVmagPu)
-
-            # D. 計算最大變動率
-            mask = v_no_pv > 0.1
-            if not np.any(mask):
-                return None, "無有效電壓節點"
-
-            dv_rates = np.abs((v_with_pv[mask] - v_no_pv[mask]) / v_no_pv[mask]) * 100
-            max_dv = np.max(dv_rates)
-            
-            status = "合格" if max_dv <= 3.0 else "超過 3% 閾值"
-            return max_dv, status
-
-        except Exception as e:
-            return None, f"COM 計算過程出錯: {str(e)}"
-        
