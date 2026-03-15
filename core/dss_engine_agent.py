@@ -3,7 +3,6 @@ import numpy as np
 from pathlib import Path
 from dss import DSS as dss_engine
 
-
 # ---------------三種路徑概念-----------------------
 
 # 相對路徑 執行程式時所在的目錄 這裡是「專案主目錄」
@@ -108,183 +107,69 @@ class EngineAgent:
         finally:
             os.chdir(original_cwd)
 
-    # 必須定義一個函數 去調用求解
+
     def solve(self):
-        """
-        觸發電力潮流計算（Power Flow Solution）。
-        將靜態的「拓樸定義」轉化為動態的「物理平衡態」。
-        """
-        # -----------------------------
-        self.text.Command = "Solve"
-        # -----------------------------
-        
-        # 之所以 求解 單獨定義出來 是因為 他不總是需要
-    
-        """
-        在 OpenDSS 中，資訊可以分為 「拓樸/定義類」 與 「狀態/解算類」，這兩者的獲取時機是不同的：
+        self.circuit.Solution.Solve()
 
-        1. 拓樸與定義類 (不需要 Solve)
-        這類資訊在 Compile完成後,就已經載入記憶體並建立了索引。
 
-        API 範例： PVSystems.Count、Loads.Count、Lines.AllNames、Circuit.Name。
-
-        執行編譯時 OpenDSS 會掃描腳本並建立物件清單這時「有多少個 PV」是確定的事實
-        不需要經過電力潮流計算 Solve 就能知道數量和名稱
-
-        2. 狀態與解算類（通常需要 Solve)
-        這類資訊涉及到電路的物理平衡，必須經過矩陣迭代計算才能得到準確值。
-
-        API 範例： AllBusVmagPu電壓 AllElementCurrents電流 Losses損失
-
-        雖然編譯完後這些數值可能有初始值 可能是 0 或 1.0
-        
-        但如果不執行 Solve 這些數值就不會反映負載壓降、線路損失或變壓器分接頭的影響。
-            
-        """
-
-    # 必須定義一個函數 去調用取得電壓
     def all_voltage(self):
-        """
-        獲取所有節點的標么電壓 (Per-Unit Voltage Magnitude)。
-        屬於【狀態類 API】：需在 solve() 後調用才有精確物理意義。
-        """
         return self.circuit.AllBusVmagPu
 
 
-    def has_pv_system(self):
-        """
-        檢查系統中是否存在 PV 系統。
-        屬於【拓樸類 API】：編譯成功即可獲取，不需執行 solve()。
-        """
-        if self.status == "Error": return False
-        return self.circuit.PVSystems.Count > 0
+    def _setup_shapes(self, load_mults):
+        # 將 Python List 轉為 OpenDSS 字串格式
+        mult_str = f"({','.join(map(str, load_mults))})"
+        # 定義名為 'CommonLoad' 的 LoadShape
+        self.text.Command = f"New LoadShape.CommonLoad npts={len(load_mults)} interval=1 mult={mult_str}"
 
 
-    def _setup_shapes(self, load_mults, pv_mults):
-        """
-        將 Python 列表轉換為 OpenDSS 的 LoadShape
-        load_mults: 負載倍數序列 (e.g., [0.5, 0.6, ...])
-        pv_mults: 太陽能倍數序列 (e.g., [0.0, 0.2, 1.0, ...])
-        """
-        npts = len(load_mults)
-        # 定義負載曲線
-        self.text.Command = f"New LoadShape.CommonLoad npts={npts} interval=1 mult=({','.join(map(str, load_mults))})"
-        # 定義太陽能曲線
-        self.text.Command = f"New LoadShape.CommonPV npts={npts} interval=1 mult=({','.join(map(str, pv_mults))})"
-
-
-    def run_timeseries_impact_clean(self, load_profile, pv_profile):
+    def run_timeseries_load(self, load_profile):
         npts = len(load_profile)
         
-        # 1. 基礎佈置 (只做一次)
-        self._setup_shapes(load_profile, pv_profile)
+        # 1. 定義曲線
+        self._setup_shapes(load_profile)
         
-        # 將所有 Load 關聯到 LoadShape
-        for load_name in self.circuit.Loads.AllNames:
-            self.text.Command = f"Load.{load_name}.Daily=CommonLoad"
-        
-        # 將所有 PV 關聯到 LoadShape (注意 PV 需要設定物件名稱)
-        for pv_name in self.circuit.PVSystems.AllNames:
-            self.text.Command = f"PVSystem.{pv_name}.Daily=CommonPV"
+        # 2. 將所有負載綁定到此曲線 (只需執行一次)
+        load_names = self.circuit.Loads.AllNames
+        for name in load_names:
+            self.text.Command = f"Load.{name}.Daily=CommonLoad"
 
-        # 準備儲存容器
-        v_base_history = []  # 存無 PV 電壓
-        v_pv_history = []    # 存有 PV 電壓
+        # 3. 初始化數據容器 (使用 Dict 方便轉 DataFrame)
+        results = {
+            "hours": [],
+            "v_min": [],   # 每小時全網最低電壓
+            "v_max": [],   # 每小時全網最高電壓
+            "losses": []   # 每小時總損耗 (kW)
+        }
 
-        # --- 第一波：純負載時序模擬 (無太陽能) ---
-        for pv in self.circuit.PVSystems.AllNames:
-            self.text.Command = f"PVSystem.{pv}.Irradiance=0"
+        # 4. 時序循環
+        # 設定為 Daily 模式但我們手動控制時步
+        self.text.Command = "Set Mode=daily Number=1 StepSize=1h"
         
         for i in range(npts):
+            # 設定當前小時並計算
             self.text.Command = f"Set Hour={i}"
-            self.text.Command = "Solve"
-            v_base_history.append(np.array(self.circuit.AllBusVmagPu))
-
-        # --- 第二波：負載 + 太陽能時序模擬 ---
-        for pv in self.circuit.PVSystems.AllNames:
-            self.text.Command = f"PVSystem.{pv}.Irradiance=1"
-        
-        for i in range(npts):
-            self.text.Command = f"Set Hour={i}"
-            self.text.Command = "Solve"
-            v_pv_history.append(np.array(self.circuit.AllBusVmagPu))
-
-        # --- 第三波：後處理計算 ---
-        max_dv_sequence = []
-        for i in range(npts):
-            v_no_pv = v_base_history[i]
-            v_with_pv = v_pv_history[i]
             
-            mask = (v_no_pv > 0.1) & (~np.isnan(v_no_pv))
-            if np.any(mask):
-                dv_rates = np.abs((v_with_pv[mask] - v_no_pv[mask]) / v_no_pv[mask]) * 100
-                max_dv_sequence.append(np.max(dv_rates))
-            else:
-                max_dv_sequence.append(0.0)
-
-        status_sequence = ["合格" if dv <= 3.0 else "不合格" for dv in max_dv_sequence]
-        return max_dv_sequence, status_sequence
-
-
-
-# 調用官方程式進行分析的類別
-class EngineAgentForCOM:
-    def __init__(self, com_engine, dss_file_path):
-        """
-        初始化 COM 版分析器。
-        :param com_engine: 外部傳入的 OpenDSSEngine.DSS 物件
-        :param dss_file_path: Master.dss 的路徑
-        """
-        # 1. 基礎屬性設定
-        self.engine = com_engine
-        self.text = com_engine.Text
-        self.circuit = com_engine.ActiveCircuit
-        self.dss_error = com_engine.Error  # COM 專屬錯誤處理介面
-        
-        # 轉為絕對路徑以確保定位精準
-        self.dss_file_path = Path(dss_file_path).absolute()
-        
-        self.status = "Success"
-        self.error_msg = ""
-
-        # 2. 執行編譯
-        self._compile_dss()
-
-    def _compile_dss(self):
-        """私有方法：處理 COM 版專有的路徑敏感編譯"""
-        original_cwd = os.getcwd()
-        
-        try:
-            if not self.dss_file_path.exists():
-                self.status = "Error"
-                self.error_msg = "檔案不存在"
-                return
-
-            # A. 切換 Python 當前目錄
-            dss_dir = str(self.dss_file_path.parent)
-            os.chdir(dss_dir)
+            # ----------電路求解-----------
+            self.circuit.Solution.Solve()
+            # -----------------------------
             
-            # B. 同步 COM 引擎工作目錄 (這是 COM 版穩定的關鍵)
-            self.text.Command = f"Set DataPath=\"{dss_dir}\""
+            # --- 數據提取 ---
+            v_pu = np.array(self.circuit.AllBusVmagPu)
+            # 排除 0 (有些斷開的節點可能是 0)
+            v_pu_filtered = v_pu[v_pu > 0.1] 
             
-            # C. 執行編譯
-            self.text.Command = "Clear"
-            self.text.Command = f"compile \"{self.dss_file_path.name}\""
+            results["hours"].append(i)
+            results["v_min"].append(np.min(v_pu_filtered))
+            results["v_max"].append(np.max(v_pu_filtered))
             
-            # D. 檢查 COM 內部編譯錯誤
-            if self.dss_error.Number != 0:
-                self.status = "Error"
-                self.error_msg = f"DSS編譯錯誤: {self.dss_error.Description}"
-        
-        except Exception as e:
-            self.status = "Error"
-            self.error_msg = str(e).replace('\n', ' ').strip()
-        finally:
-            # 恢復外部環境目錄
-            os.chdir(original_cwd)
+            # Losses 回傳是 [P, Q]，通常取第一個 P (Watt)，轉為 kW
+            loss_kw = self.circuit.Losses[0] / 1000.0
+            results["losses"].append(loss_kw)
 
-    def has_pv_system(self):
-        """檢查系統中是否有 PVSystems"""
-        if self.status == "Error": return False
-        return self.circuit.PVSystems.Count > 0
+        return results
+            
+
+
+
 
