@@ -1,4 +1,3 @@
-from dss import DSS as dss_engine
 import sys
 import os
 from core.dss_engine_agent import EngineAgent
@@ -80,14 +79,6 @@ if __name__ == "__main__":
 
     case3 = "dss_script/case3.dss"
     run_script_by_agent(case3)
+    
 
-
-
-
-    # if len(sys.argv) > 1:
-    #     run_pure_python_control(sys.argv[1])
-    # else:
-    #     print("請拖放 .dss 檔案到腳本上或提供路徑")
-
-
-
+    
