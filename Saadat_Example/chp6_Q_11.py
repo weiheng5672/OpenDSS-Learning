@@ -49,20 +49,9 @@ print(bus_names)
 
 circuit.SetActiveBus("Load_Bus")
 
-v_pu = circuit.ActiveBus.puVoltages
+v_pu = circuit.ActiveBus.puVmagAngle
 
-print(f"{[v_pu[0]]}, {[v_pu[1]]}")
+print(v_pu[0])
+print(v_pu[1])
 
-import cmath
-# A 相 (index 0, 1)
-v_a = complex(v_pu[0], v_pu[1])
-v_b = complex(v_pu[2], v_pu[3])
-v_c = complex(v_pu[4], v_pu[5])
-mag_a, ang_rad_a = cmath.polar(v_a)
-mag_b, ang_rad_b = cmath.polar(v_b)
-mag_c, ang_rad_c = cmath.polar(v_b)
 
-import math
-print(f"Voltage: {mag_a:.4f} pu, Angle: {math.degrees(ang_rad_a):.2f} deg")
-print(f"Voltage: {mag_b:.4f} pu, Angle: {math.degrees(ang_rad_b):.2f} deg")
-print(f"Voltage: {mag_c:.4f} pu, Angle: {math.degrees(ang_rad_c):.2f} deg")
