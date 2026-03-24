@@ -1,73 +1,65 @@
 import math
 from dss import DSS as dss_engine
 
-V_base = 161 # kV
-S_base = 100 # MVA
-Z_base = (V_base**2) / S_base
+"""
+透過opendss演示 加入電容 改善功率因數的習題
+最後可以看到投入電容能夠明顯改善功因
+減少電流 提升電壓 減少線損
+"""
 
-# OpenDSS 需要實際阻抗 (Ohm)，需要將 pu 轉為 Ohm
-r12_pu = 0.02
-x12_pu = 0.04
-r12 = r12_pu*Z_base
-x12 = x12_pu*Z_base
+# --- 參數設定 ---
+V_base = 161 
+S_base = 100 
+Z_base = (V_base**2) / S_base 
 
+r12_pu, x12_pu = 0.02, 0.04
+r12, x12 = r12_pu * Z_base, x12_pu * Z_base
 
-P_Mw = 40
-Q_Mvar = 30
+P_Mw, Q_Mvar = 40, 30
+Q_cap_kvar = 25000  # 假設投入25 Mvar
 
-
-# 初始化 OpenDSS
+# --- 初始化 OpenDSS ---
 text = dss_engine.Text
 circuit = dss_engine.ActiveCircuit
 
-# 1. 建立電路 (設定 Bus 1 為 SwingBus)
-# BasekV 是線電壓
+def build_circuit():
+    text.Command = "Clear"
+    text.Command = f"New Circuit.TransmissionExample basekv={V_base} phases=3"
+    text.Command = f"New Line.L12 Bus1=SourceBus Bus2=Load_Bus Phases=3 r1={r12} x1={x12} length=1 units=none"
+    text.Command = f"New Load.Load2 Bus1=Load_Bus Phases=3 kV={V_base} kW={P_Mw*1000} kvar={Q_Mvar*1000} model=1"
+    # 定義電容，但初始狀態設為關閉 (enabled=no)
+    text.Command = f"New Capacitor.Cap1 Bus1=Load_Bus Phases=3 kV={V_base} kvar={Q_cap_kvar} enabled=no"
+    text.Command = f"Set VoltageBases = [{V_base}]"
+    text.Command = "CalcVoltageBases"
 
-text.Command = "Clear"
+def run_and_report(case_name):
+    circuit.Solution.Solve()
+    
+    # 取得負載端電壓 (取第一相 pu 值)
+    circuit.SetActiveBus("Load_Bus")
+    v_pu = circuit.Buses.puVmagAngle[0]
+    
+    # 取得線路損耗 (傳回值為 Watt, Var)
+    circuit.SetActiveElement("Line.L12")
+    loss = circuit.ActiveElement.Losses 
+    
+    # 取得系統側總功率來計算 PF
+    line_powers = circuit.ActiveElement.Powers
+    p_in = sum(line_powers[0:6:2])
+    q_in = sum(line_powers[1:6:2])
+    pf = abs(p_in) / math.sqrt(p_in**2 + q_in**2 + 1e-9)
 
-text.Command = f"New Circuit.TransmissionExample basekv={V_base} phases=3 "
+    print(f"--- {case_name} ---")
+    print(f"負載電壓: {v_pu:.4f} pu")
+    print(f"線路損耗: {loss[0]/1000:.2f} kW / {loss[1]/1000:.2f} kvar")
+    print(f"系統側功率因數 (PF): {pf:.4f}\n")
 
-text.Command = f"Edit Vsource.source bus1=Swing_Bus basekv={V_base} pu=1.0 Angle=0 BaseFreq=60 MVAsc3=1e12 MVASC1=1e12"
+# --- 執行流程 ---
+build_circuit()
 
-# 2. 定義線路 (使用阻抗矩陣，長度設為 1)
+# 1. 執行未投切電容的情況
+run_and_report("未投入電容 (Baseline)")
 
-text.Command = f"New Line.L12 Bus1=Swing_Bus Bus2=Load_Bus Phases=3 r1={r12} x1={x12} length=1 units=none"
-
-
-# 3. 定義負荷 (Load)
-# OpenDSS 預設是平衡三相，kV 設定為線電壓
-text.Command = f"New Load.Load2 Bus1=Load_Bus Phases=3 kV={V_base} kW={P_Mw*1000} kvar={Q_Mvar*1000} model=1"
-
-# 4. 定義電容器 (Capacitor)
-# 假設加入 15 Mvar 的電容
-Q_cap_Mvar = 30
-text.Command = f"New Capacitor.Cap1 Bus1=Load_Bus Phases=3 kV={V_base} kvar={Q_cap_Mvar*1000}"
-
-# 5. 執行潮流計算
-text.Command = f"Set VoltageBases = [{V_base}]"
-text.Command = "CalcVoltageBases"
-
-circuit.Solution.Solve()
-
-circuit.SetActiveBus("Load_Bus")
-pu_v = circuit.Buses.puVmagAngle
-print(f"電壓大小:{pu_v[0]:.6f} pu；電壓角度:{pu_v[1]:.6f} ")
-
-
-circuit.SetActiveElement("Load.Load2")
-# 取得複數功率 [P1, Q1, P2, Q2, P3, Q3] (單位為 kW, kvar)
-powers = circuit.ActiveElement.Powers
-print(f"負載實功: {powers[0]/1000:.4f} MW；負載虛功: {powers[1]/1000:.4f} Mvar")
-print(f"負載功因: {circuit.Loads.PF:.4f}")
-
-circuit.SetActiveElement("Line.L12")
-line_losses = circuit.ActiveElement.Losses # 回傳 [P_loss, Q_loss]
-print(f"L12 線路實功損耗: {line_losses[0]/1000:.4f} kW")
-print(f"L12 線路虛功損耗: {line_losses[1]/1000:.4f} kvar")
-
-line_powers = circuit.ActiveElement.Powers
-p_in = sum(line_powers[0:6:2])
-q_in = sum(line_powers[1:6:2])
-pf_improved = abs(p_in) / math.sqrt(p_in**2 + q_in**2)
-print(f"系統側看進去的 PF: {pf_improved:.4f}")
-
+# 2. 投入電容並重新計算
+text.Command = "Capacitor.Cap1.enabled=yes"
+run_and_report("已投入 15 Mvar 電容 (Improved)")
