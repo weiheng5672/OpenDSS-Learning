@@ -130,4 +130,4 @@ run_and_report("未投入電容 (Baseline)")
 
 # 2. 投入電容並重新計算
 text.Command = "Capacitor.Cap1.enabled=yes"
-run_and_report("已投入 15 Mvar 電容 (Improved)")
+run_and_report("已投入 25 Mvar 電容 (Improved)")
