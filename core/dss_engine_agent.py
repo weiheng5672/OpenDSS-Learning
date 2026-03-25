@@ -123,53 +123,57 @@ class EngineAgent:
         self.text.Command = f"New LoadShape.CommonLoad npts={len(load_mults)} interval=1 mult={mult_str}"
 
 
-    def run_timeseries_load(self, load_profile):
-        npts = len(load_profile)
-        
-        # 1. 定義曲線
+    def set_load_profile(self, load_profile, shape_name="CommonLoad"):
+        """
+        僅負責設定 LoadShape 並將其綁定到所有負載。
+        不執行 Solve。
+        """
+        # 1. 透過原本的私有方法定義曲線
         self._setup_shapes(load_profile)
         
-        # 2. 將所有負載綁定到此曲線 (只需執行一次)
+        # 2. 將所有負載綁定到此曲線
         load_names = self.circuit.Loads.AllNames
         for name in load_names:
-            self.text.Command = f"Load.{name}.Daily=CommonLoad"
+            # 這裡假設你想統一控制所有 Load，若有特定需求可再過濾名稱
+            self.text.Command = f"Load.{name}.Daily={shape_name}"
+            
+        print(f"Successfully bound {len(load_names)} loads to {shape_name}.")
 
-        # 3. 初始化數據容器 (使用 Dict 方便轉 DataFrame)
-        results = {
-            "hours": [],
-            "v_min": [],   # 每小時全網最低電壓
-            "v_max": [],   # 每小時全網最高電壓
-            "losses": []   # 每小時總損耗 (kW)
-        }
 
-        # 4. 時序循環
-        # 設定為 Daily 模式但我們手動控制時步
-        self.text.Command = "Set Mode=daily Number=1 StepSize=1h"
-        
-        for i in range(npts):
-            # 設定當前小時並計算
-            self.text.Command = f"Set Hour={i}"
-            
-            # ----------電路求解-----------
-            self.circuit.Solution.Solve()
-            # -----------------------------
-            
-            # --- 數據提取 ---
-            v_pu = np.array(self.circuit.AllBusVmagPu)
-            # 排除 0 (有些斷開的節點可能是 0)
-            v_pu_filtered = v_pu[v_pu > 0.1] 
-            
-            results["hours"].append(i)
-            results["v_min"].append(np.min(v_pu_filtered))
-            results["v_max"].append(np.max(v_pu_filtered))
-            
-            # Losses 回傳是 [P, Q]，通常取第一個 P (Watt)，轉為 kW
-            loss_kw = self.circuit.Losses[0] / 1000.0
-            results["losses"].append(loss_kw)
+    def run_timeseries_analysis(self, steps):
+            """
+            專門負責執行時序求解與收集結果。
+            steps: 執行的步數 (例如 len(load_profile))
+            """
+            results = {
+                "hours": [],
+                "v_min": [],
+                "v_max": [],
+                "losses": []
+            }
 
-        return results
+            # 設定模擬模式
+            self.text.Command = "Set Mode=daily Number=1 StepSize=1h"
             
+            for i in range(steps):
+                self.text.Command = f"Set Hour={i}"
+                
+                # 執行計算
+                self.circuit.Solution.Solve()
+                
+                # 提取數據
+                v_pu = np.array(self.circuit.AllBusVmagPu)
+                v_pu_filtered = v_pu[v_pu > 0.1] 
+                
+                results["hours"].append(i)
+                results["v_min"].append(np.min(v_pu_filtered))
+                results["v_max"].append(np.max(v_pu_filtered))
+                
+                # 取實功損耗 (kW)
+                loss_kw = self.circuit.Losses[0] / 1000.0
+                results["losses"].append(loss_kw)
 
+            return results
 
 
 
