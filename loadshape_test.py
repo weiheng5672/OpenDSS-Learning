@@ -14,8 +14,10 @@ def run_test(dss_file_path):
     hours = list(range(24))
     
     agent = EngineAgent(dss_file_path)
-    
-    results = agent.run_timeseries_load(mult)
+
+    agent.set_load_profile(mult)
+
+    results = agent.run_timeseries_analysis(len(mult))
 
     # --- 開始繪圖 ---
     # 建立一個包含三個子圖的畫布 (3列1行)
